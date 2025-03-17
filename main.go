@@ -31,6 +31,7 @@ type Filter struct {
 
 // NewFilter - создает фильтр с условием
 func NewFilter(predicate func(int) bool) *Filter {
+	log.Println("Создание NewFilter")
 	return &Filter{predicate: predicate}
 }
 
@@ -53,6 +54,7 @@ func (f *Filter) Process(input <-chan int, done <-chan struct{}) <-chan int {
 			}
 		}
 	}()
+	log.Println("Process Filter")
 	return output
 }
 
@@ -65,6 +67,7 @@ type RingBuffer struct {
 
 // NewRingBuffer - создает новый буфер
 func NewRingBuffer(size int) *RingBuffer {
+	log.Println("Создание NewRingBuffer")
 	return &RingBuffer{
 		size:   size,
 		buffer: make([]int, 0, size),
@@ -94,6 +97,7 @@ func (rb *RingBuffer) Process(input <-chan int, done <-chan struct{}) <-chan int
 			}
 		}
 	}()
+	log.Println("Process RingBuffer")
 	return output
 }
 
@@ -102,9 +106,11 @@ func (rb *RingBuffer) add(value int) {
 	defer rb.mu.Unlock()
 
 	if len(rb.buffer) == rb.size {
+		log.Println("Буфер переполнен")
 		rb.buffer = rb.buffer[1:] // удаляем старейший элемент
 	}
 	rb.buffer = append(rb.buffer, value)
+	log.Printf("Добавлено в буфер: %d\n", value)
 }
 
 func (rb *RingBuffer) flush(output chan int) {
@@ -115,6 +121,7 @@ func (rb *RingBuffer) flush(output chan int) {
 		output <- v
 	}
 	rb.buffer = rb.buffer[:0]
+	log.Println("Буфер очищен")
 }
 
 // ConsoleSource - источник данных
@@ -139,6 +146,7 @@ func (cs *ConsoleSource) Process(done <-chan struct{}) <-chan int {
 				log.Println("Ошибка ввода. Пожалуйста, ввведите число")
 				continue
 			}
+			log.Printf("Введено число: %d\n", num)
 			select {
 			case <-done:
 				return
@@ -146,6 +154,7 @@ func (cs *ConsoleSource) Process(done <-chan struct{}) <-chan int {
 			}
 		}
 	}()
+	log.Println("Process ConsoleSource")
 	return output
 }
 
@@ -167,7 +176,7 @@ func (cc *ConsoleConsumer) Process(input <-chan int, done <-chan struct{}) {
 				if !ok {
 					return
 				}
-				fmt.Printf("Полученные данные: %d\n", v)
+				log.Printf("Полученные данные: %d\n", v)
 			}
 		}
 	}()
